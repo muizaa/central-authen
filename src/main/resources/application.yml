@@ -1,0 +1,116 @@
+server:
+  port: 8080
+  servlet:
+    contextPath: /ktb/rest/central
+management:
+  server:
+    # If separate management port, contextPath will NOT apply e.g., http://localhost:8081/actuator
+    port: 8081
+  security:
+    enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, info, prometheus
+
+spring:
+  application:
+    name: central-authentication
+
+# FRAMEWORK CONFIGURATIONS
+microservice-frameworks:
+  core:
+    request-response-log:
+      # Set to true to enable the automatic request/response logging to ELK after API call is completed (both Success and Failure cases).
+      # Set to false to disable the automatic request/response logging to ELK.
+      enabled: true
+      # Set to true to log the request & response payloads to ELK
+      log-payload: true
+      # Set to true to log the request headers to ELK
+      log-req-headers: true
+    # Set to true to return the x-request-id as response header
+    return-x-request-id: true
+    logging:
+      maskpatterns:
+        - .*password.*
+      masking-type: SIMPLE
+      # SIMPLE: Mask JSON data using fixed length "*****" string
+      # BASIC: Mask JSON data by replacing each alphabet and numeric value with "*" character
+      # HASH: Mask JSON data by creating hash string using SHA-512 algorithm (without using salt)
+      # SALTHASH: Mask JSON data by creating hash string using SHA-512 algorithm with random salt value. Note that salt will be prepend to the hash string (separated by ':' character).
+
+auth-service:
+  asyncPoolSize: 8
+
+ldap:
+  urls: "ldap://10.9.152.251:389"
+  base: DC=DOMAIN,DC=KTB,DC=CO,DC=TH
+  domain: ktb.co.th
+  binduser: ktbsearch@domain.ktb.co.th
+  bindpassword: "!QAZcde3"
+
+
+keycloak:
+  #url: https://keycloak.dev-devops.ktb:8443
+  url: http://keycloak.dev-devops.ktb:8080
+  env: dev
+  authentication:
+    admin:
+      username: central_authentication
+      password: "@uthent!cationS3rvice"
+      client_id: admin-cli
+      realm: master
+
+user-service:
+  esolution:
+    # url: http://127.0.0.1:8029/user/roles
+    url: http://intapigw.devcloud.ktb/ktb/rest/esolution/v1/user/roles
+    method: POST
+    ldapAttributeMapping:
+      - kcsbranchcode
+      - rankcode
+    checkConcurrentLogin: true
+    eventCallback: http://intapigw.devcloud.ktb:8000/ktb/rest/esolution/v1/ws/topic
+    auditRealm: central-esolution
+    auditUrl: http://intapigw.devcloud.ktb/ktb/rest/esolution/v1/auditLog/authentication
+
+  biznow:
+    url: http://intapigw.devcloud.ktb/ktb/rest/biznow/v1/user/roles
+    method: POST
+    ldapAttributeMapping:
+      - kcsbranchcode
+      - rankcode
+    checkConcurrentLogin: false
+    auditRealm: central-gtb
+    auditUrl: http://intapigw.devcloud.ktb/ktb/rest/biznow/v1/auditLog/authentication
+    overwriteAttributes:
+      - kcsbranchcode
+    role: superadmin
+
+  scf:
+    url: http://intapigw.devcloud.ktb:8000/ktb/rest/scf/v1/user-management/users/user-roles
+    method: POST
+    ldapAttributeMapping:
+      - thaifirstname
+      - thailastname
+      - rankcode
+    checkConcurrentLogin: false
+    auditRealm: central-gtb
+    auditUrl: http://intapigw.devcloud.ktb/ktb/rest/scf/v1/auditLog/authentication
+    role: userAdmin
+
+  payment:
+#    url: http://intapigw.devcloud.ktb:8000/ktb/rest/scf/v1/user-management/users/user-roles
+#    method: POST
+    ldapAttributeMapping:
+      - kcsbranchcode
+      - rankcode
+#    checkConcurrentLogin: false
+    auditRealm: central-gtb
+    auditUrl: http://intapigw.devcloud.ktb/ktb/rest/payment/v1/auditLog/authentication
+
+modeAuthorize:
+  esolution:
+    client: authorizer
+  biznow:
+    client: authorizer
